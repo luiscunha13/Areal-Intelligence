@@ -1,0 +1,58 @@
+# Scoring Weights Catalog
+# All scoring model parameters are declared here and git-versioned.
+# Changing a weight = one line change + git commit = full audit trail.
+
+version: "1.0"
+effective_date: "2026-08-28"
+
+# ── Sector Scoring (RRG-based) ────────────────────────────────
+sector_scoring:
+  rs_ratio_weight: 0.50
+  rs_momentum_weight: 0.30
+  macro_regime_fit_weight: 0.20
+  # Horizons
+  tactical_window: 50      # days
+  strategic_window: 260    # days
+  benchmark_ticker: "SPY"
+
+# ── ETF Scoring (Momentum + Risk-Adjusted) ───────────────────
+etf_scoring:
+  momentum_1m_weight: 0.10
+  momentum_3m_weight: 0.20
+  momentum_6m_weight: 0.30
+  momentum_12m_weight: 0.25
+  sharpe_1y_weight: 0.10
+  volatility_penalty_weight: 0.05
+  # Classification thresholds (composite score percentile)
+  thresholds:
+    strong_buy: 80
+    buy: 60
+    neutral: 40
+    underperform: 20
+
+# ── Stock Scoring (Multi-Factor) ─────────────────────────────
+stock_scoring:
+  momentum_weight: 0.35
+  trend_weight: 0.25
+  quality_weight: 0.25
+  value_weight: 0.15
+  # Classification thresholds (composite score percentile)
+  thresholds:
+    leading: 75
+    improving: 50
+    weakening: 25
+    lagging: 0
+
+# ── Macro Regime Engine ───────────────────────────────────────
+regime_scoring:
+  growth_momentum_window: 3      # months
+  inflation_momentum_window: 3   # months
+  fca_weight: 0.20               # Financial Conditions Amplifier
+  primary_growth_series: "INDPRO"
+  primary_inflation_series: "CPIAUCSL"
+  # Quadrant definitions
+  quadrants:
+    goldilocks:   { growth: "rising",  inflation: "falling" }
+    reflation:    { growth: "rising",  inflation: "rising"  }
+    stagflation:  { growth: "falling", inflation: "rising"  }
+    deflation:    { growth: "falling", inflation: "falling" }

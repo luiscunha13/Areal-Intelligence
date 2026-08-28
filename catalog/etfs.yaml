@@ -1,0 +1,679 @@
+# ETF Universe Catalog
+# Full universe of ~100 ETFs across all categories.
+# All price data fetched free via yfinance.
+# Adding a new ETF: add an entry here, run catalog_sync. Done.
+#
+# Fields:
+#   ticker:       Yahoo Finance ticker
+#   name:         Full fund name
+#   category:     sector | factor | fixed_income | international | commodity | real_estate | thematic | volatility | multi_asset
+#   sub_category: More specific grouping within category
+#   benchmark:    Index the ETF tracks
+#   gics_sector:  For sector ETFs only
+#   expense_ratio: Annual expense ratio (decimal, e.g. 0.0009 = 0.09%)
+
+etfs:
+
+  # ── Sector (GICS) ─────────────────────────────────────────────
+  - ticker: XLK
+    name: Technology Select Sector SPDR Fund
+    category: sector
+    sub_category: information_technology
+    gics_sector: Information Technology
+    benchmark: S&P 500 IT Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLF
+    name: Financial Select Sector SPDR Fund
+    category: sector
+    sub_category: financials
+    gics_sector: Financials
+    benchmark: S&P 500 Financials Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLE
+    name: Energy Select Sector SPDR Fund
+    category: sector
+    sub_category: energy
+    gics_sector: Energy
+    benchmark: S&P 500 Energy Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLV
+    name: Health Care Select Sector SPDR Fund
+    category: sector
+    sub_category: health_care
+    gics_sector: Health Care
+    benchmark: S&P 500 Health Care Sector
+    expense_ratio: 0.0013
+
+  - ticker: XLI
+    name: Industrial Select Sector SPDR Fund
+    category: sector
+    sub_category: industrials
+    gics_sector: Industrials
+    benchmark: S&P 500 Industrials Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLY
+    name: Consumer Discretionary Select Sector SPDR Fund
+    category: sector
+    sub_category: consumer_discretionary
+    gics_sector: Consumer Discretionary
+    benchmark: S&P 500 Consumer Discretionary Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLP
+    name: Consumer Staples Select Sector SPDR Fund
+    category: sector
+    sub_category: consumer_staples
+    gics_sector: Consumer Staples
+    benchmark: S&P 500 Consumer Staples Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLU
+    name: Utilities Select Sector SPDR Fund
+    category: sector
+    sub_category: utilities
+    gics_sector: Utilities
+    benchmark: S&P 500 Utilities Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLRE
+    name: Real Estate Select Sector SPDR Fund
+    category: sector
+    sub_category: real_estate
+    gics_sector: Real Estate
+    benchmark: S&P 500 Real Estate Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLC
+    name: Communication Services Select Sector SPDR Fund
+    category: sector
+    sub_category: communication_services
+    gics_sector: Communication Services
+    benchmark: S&P 500 Communication Services Sector
+    expense_ratio: 0.0009
+
+  - ticker: XLB
+    name: Materials Select Sector SPDR Fund
+    category: sector
+    sub_category: materials
+    gics_sector: Materials
+    benchmark: S&P 500 Materials Sector
+    expense_ratio: 0.0009
+
+  # ── Factor / Style ────────────────────────────────────────────
+  - ticker: QQQ
+    name: Invesco QQQ Trust
+    category: factor
+    sub_category: growth_large_cap
+    benchmark: NASDAQ-100
+    expense_ratio: 0.0020
+
+  - ticker: IWM
+    name: iShares Russell 2000 ETF
+    category: factor
+    sub_category: small_cap_blend
+    benchmark: Russell 2000
+    expense_ratio: 0.0019
+
+  - ticker: VTV
+    name: Vanguard Value ETF
+    category: factor
+    sub_category: large_cap_value
+    benchmark: CRSP US Large Cap Value
+    expense_ratio: 0.0004
+
+  - ticker: VUG
+    name: Vanguard Growth ETF
+    category: factor
+    sub_category: large_cap_growth
+    benchmark: CRSP US Large Cap Growth
+    expense_ratio: 0.0004
+
+  - ticker: MTUM
+    name: iShares MSCI USA Momentum Factor ETF
+    category: factor
+    sub_category: momentum
+    benchmark: MSCI USA Momentum SR Variant
+    expense_ratio: 0.0015
+
+  - ticker: QUAL
+    name: iShares MSCI USA Quality Factor ETF
+    category: factor
+    sub_category: quality
+    benchmark: MSCI USA Sector Neutral Quality
+    expense_ratio: 0.0015
+
+  - ticker: VLUE
+    name: iShares MSCI USA Value Factor ETF
+    category: factor
+    sub_category: value
+    benchmark: MSCI USA Enhanced Value
+    expense_ratio: 0.0015
+
+  - ticker: USMV
+    name: iShares MSCI USA Min Vol Factor ETF
+    category: factor
+    sub_category: min_volatility
+    benchmark: MSCI USA Minimum Volatility
+    expense_ratio: 0.0015
+
+  - ticker: IWD
+    name: iShares Russell 1000 Value ETF
+    category: factor
+    sub_category: large_cap_value
+    benchmark: Russell 1000 Value
+    expense_ratio: 0.0019
+
+  - ticker: IWF
+    name: iShares Russell 1000 Growth ETF
+    category: factor
+    sub_category: large_cap_growth
+    benchmark: Russell 1000 Growth
+    expense_ratio: 0.0019
+
+  - ticker: IWO
+    name: iShares Russell 2000 Growth ETF
+    category: factor
+    sub_category: small_cap_growth
+    benchmark: Russell 2000 Growth
+    expense_ratio: 0.0024
+
+  - ticker: IWN
+    name: iShares Russell 2000 Value ETF
+    category: factor
+    sub_category: small_cap_value
+    benchmark: Russell 2000 Value
+    expense_ratio: 0.0024
+
+  - ticker: SPY
+    name: SPDR S&P 500 ETF Trust
+    category: factor
+    sub_category: large_cap_blend
+    benchmark: S&P 500
+    expense_ratio: 0.0009
+
+  - ticker: VTI
+    name: Vanguard Total Stock Market ETF
+    category: factor
+    sub_category: total_market
+    benchmark: CRSP US Total Market
+    expense_ratio: 0.0003
+
+  - ticker: VOO
+    name: Vanguard S&P 500 ETF
+    category: factor
+    sub_category: large_cap_blend
+    benchmark: S&P 500
+    expense_ratio: 0.0003
+
+  # ── Fixed Income ──────────────────────────────────────────────
+  - ticker: TLT
+    name: iShares 20+ Year Treasury Bond ETF
+    category: fixed_income
+    sub_category: long_duration_treasury
+    benchmark: ICE US Treasury 20+ Year
+    expense_ratio: 0.0015
+
+  - ticker: IEF
+    name: iShares 7-10 Year Treasury Bond ETF
+    category: fixed_income
+    sub_category: intermediate_treasury
+    benchmark: ICE US Treasury 7-10 Year
+    expense_ratio: 0.0015
+
+  - ticker: SHY
+    name: iShares 1-3 Year Treasury Bond ETF
+    category: fixed_income
+    sub_category: short_duration_treasury
+    benchmark: ICE US Treasury 1-3 Year
+    expense_ratio: 0.0015
+
+  - ticker: AGG
+    name: iShares Core US Aggregate Bond ETF
+    category: fixed_income
+    sub_category: aggregate_bond
+    benchmark: Bloomberg US Aggregate Bond
+    expense_ratio: 0.0003
+
+  - ticker: BND
+    name: Vanguard Total Bond Market ETF
+    category: fixed_income
+    sub_category: aggregate_bond
+    benchmark: Bloomberg US Aggregate Float Adjusted
+    expense_ratio: 0.0003
+
+  - ticker: LQD
+    name: iShares iBoxx $ Investment Grade Corporate Bond ETF
+    category: fixed_income
+    sub_category: investment_grade_corporate
+    benchmark: Markit iBoxx USD Liquid Investment Grade
+    expense_ratio: 0.0014
+
+  - ticker: HYG
+    name: iShares iBoxx $ High Yield Corporate Bond ETF
+    category: fixed_income
+    sub_category: high_yield_corporate
+    benchmark: Markit iBoxx USD Liquid High Yield
+    expense_ratio: 0.0048
+
+  - ticker: TIP
+    name: iShares TIPS Bond ETF
+    category: fixed_income
+    sub_category: inflation_protected
+    benchmark: Bloomberg US TIPS
+    expense_ratio: 0.0019
+
+  - ticker: MBB
+    name: iShares MBS ETF
+    category: fixed_income
+    sub_category: mortgage_backed
+    benchmark: Bloomberg US MBS
+    expense_ratio: 0.0006
+
+  - ticker: EMB
+    name: iShares J.P. Morgan USD Emerging Markets Bond ETF
+    category: fixed_income
+    sub_category: emerging_market_bond
+    benchmark: JP Morgan EMBI Global Core
+    expense_ratio: 0.0039
+
+  - ticker: BNDX
+    name: Vanguard Total International Bond ETF
+    category: fixed_income
+    sub_category: international_bond
+    benchmark: Bloomberg Global Aggregate ex-USD
+    expense_ratio: 0.0007
+
+  - ticker: VCSH
+    name: Vanguard Short-Term Corporate Bond ETF
+    category: fixed_income
+    sub_category: short_duration_corporate
+    benchmark: Bloomberg US 1-5 Year Corporate Bond
+    expense_ratio: 0.0004
+
+  - ticker: VCIT
+    name: Vanguard Intermediate-Term Corporate Bond ETF
+    category: fixed_income
+    sub_category: intermediate_corporate
+    benchmark: Bloomberg US 5-10 Year Corporate Bond
+    expense_ratio: 0.0004
+
+  # ── International ─────────────────────────────────────────────
+  - ticker: EFA
+    name: iShares MSCI EAFE ETF
+    category: international
+    sub_category: developed_markets
+    benchmark: MSCI EAFE
+    expense_ratio: 0.0032
+
+  - ticker: VEA
+    name: Vanguard FTSE Developed Markets ETF
+    category: international
+    sub_category: developed_markets
+    benchmark: FTSE Developed All Cap ex US
+    expense_ratio: 0.0005
+
+  - ticker: EEM
+    name: iShares MSCI Emerging Markets ETF
+    category: international
+    sub_category: emerging_markets
+    benchmark: MSCI Emerging Markets
+    expense_ratio: 0.0068
+
+  - ticker: VWO
+    name: Vanguard FTSE Emerging Markets ETF
+    category: international
+    sub_category: emerging_markets
+    benchmark: FTSE Emerging Markets All Cap China A Inclusion
+    expense_ratio: 0.0008
+
+  - ticker: IEUR
+    name: iShares Core MSCI Europe ETF
+    category: international
+    sub_category: europe
+    benchmark: MSCI Europe IMI
+    expense_ratio: 0.0009
+
+  - ticker: VGK
+    name: Vanguard FTSE Europe ETF
+    category: international
+    sub_category: europe
+    benchmark: FTSE Developed Europe All Cap
+    expense_ratio: 0.0008
+
+  - ticker: EWJ
+    name: iShares MSCI Japan ETF
+    category: international
+    sub_category: japan
+    benchmark: MSCI Japan
+    expense_ratio: 0.0050
+
+  - ticker: FXI
+    name: iShares China Large-Cap ETF
+    category: international
+    sub_category: china
+    benchmark: Hang Seng China Enterprises
+    expense_ratio: 0.0074
+
+  - ticker: MCHI
+    name: iShares MSCI China ETF
+    category: international
+    sub_category: china
+    benchmark: MSCI China
+    expense_ratio: 0.0059
+
+  - ticker: INDA
+    name: iShares MSCI India ETF
+    category: international
+    sub_category: india
+    benchmark: MSCI India
+    expense_ratio: 0.0065
+
+  - ticker: EWZ
+    name: iShares MSCI Brazil ETF
+    category: international
+    sub_category: brazil
+    benchmark: MSCI Brazil 25/50
+    expense_ratio: 0.0059
+
+  - ticker: EWY
+    name: iShares MSCI South Korea ETF
+    category: international
+    sub_category: south_korea
+    benchmark: MSCI Korea 25/50
+    expense_ratio: 0.0058
+
+  - ticker: EWT
+    name: iShares MSCI Taiwan ETF
+    category: international
+    sub_category: taiwan
+    benchmark: MSCI Taiwan 25/50
+    expense_ratio: 0.0059
+
+  # ── Commodity ─────────────────────────────────────────────────
+  - ticker: GLD
+    name: SPDR Gold Shares
+    category: commodity
+    sub_category: gold
+    benchmark: Gold Spot Price
+    expense_ratio: 0.0040
+
+  - ticker: IAU
+    name: iShares Gold Trust
+    category: commodity
+    sub_category: gold
+    benchmark: Gold Spot Price
+    expense_ratio: 0.0025
+
+  - ticker: SLV
+    name: iShares Silver Trust
+    category: commodity
+    sub_category: silver
+    benchmark: Silver Spot Price
+    expense_ratio: 0.0050
+
+  - ticker: GDX
+    name: VanEck Gold Miners ETF
+    category: commodity
+    sub_category: gold_miners
+    benchmark: NYSE Arca Gold Miners
+    expense_ratio: 0.0051
+
+  - ticker: USO
+    name: United States Oil Fund
+    category: commodity
+    sub_category: crude_oil
+    benchmark: WTI Crude Oil Front-Month Futures
+    expense_ratio: 0.0060
+
+  - ticker: UNG
+    name: United States Natural Gas Fund
+    category: commodity
+    sub_category: natural_gas
+    benchmark: Natural Gas Front-Month Futures
+    expense_ratio: 0.0060
+
+  - ticker: DBC
+    name: Invesco DB Commodity Index Tracking Fund
+    category: commodity
+    sub_category: broad_commodity
+    benchmark: DBIQ Optimum Yield Diversified Commodity
+    expense_ratio: 0.0085
+
+  - ticker: PDBC
+    name: Invesco Optimum Yield Diversified Commodity
+    category: commodity
+    sub_category: broad_commodity
+    benchmark: DBIQ Optimum Yield Diversified Commodity
+    expense_ratio: 0.0059
+
+  - ticker: CPER
+    name: United States Copper Index Fund
+    category: commodity
+    sub_category: copper
+    benchmark: SummerHaven Copper Index Total Return
+    expense_ratio: 0.0065
+
+  - ticker: WEAT
+    name: Teucrium Wheat Fund
+    category: commodity
+    sub_category: agriculture
+    benchmark: Wheat Futures
+    expense_ratio: 0.0190
+
+  - ticker: CORN
+    name: Teucrium Corn Fund
+    category: commodity
+    sub_category: agriculture
+    benchmark: Corn Futures
+    expense_ratio: 0.0194
+
+  # ── Real Estate ───────────────────────────────────────────────
+  - ticker: VNQ
+    name: Vanguard Real Estate ETF
+    category: real_estate
+    sub_category: broad_reit
+    benchmark: MSCI US IMI Real Estate 25/50
+    expense_ratio: 0.0012
+
+  - ticker: IYR
+    name: iShares US Real Estate ETF
+    category: real_estate
+    sub_category: broad_reit
+    benchmark: Dow Jones US Real Estate
+    expense_ratio: 0.0040
+
+  - ticker: SCHH
+    name: Schwab US REIT ETF
+    category: real_estate
+    sub_category: broad_reit
+    benchmark: Dow Jones US Select REIT
+    expense_ratio: 0.0007
+
+  - ticker: REM
+    name: iShares Mortgage Real Estate ETF
+    category: real_estate
+    sub_category: mortgage_reit
+    benchmark: FTSE Nareit All Mortgage Capped
+    expense_ratio: 0.0048
+
+  - ticker: VNQI
+    name: Vanguard Global ex-US Real Estate ETF
+    category: real_estate
+    sub_category: international_reit
+    benchmark: S&P Global ex-US Property
+    expense_ratio: 0.0012
+
+  # ── Thematic ──────────────────────────────────────────────────
+  - ticker: ARKK
+    name: ARK Innovation ETF
+    category: thematic
+    sub_category: disruptive_innovation
+    benchmark: Active
+    expense_ratio: 0.0075
+
+  - ticker: ARKW
+    name: ARK Next Generation Internet ETF
+    category: thematic
+    sub_category: next_gen_internet
+    benchmark: Active
+    expense_ratio: 0.0088
+
+  - ticker: BOTZ
+    name: Global X Robotics & Artificial Intelligence ETF
+    category: thematic
+    sub_category: robotics_ai
+    benchmark: Indxx Global Robotics & Artificial Intelligence Thematic
+    expense_ratio: 0.0068
+
+  - ticker: ROBO
+    name: ROBO Global Robotics and Automation Index ETF
+    category: thematic
+    sub_category: robotics_automation
+    benchmark: ROBO Global Robotics and Automation
+    expense_ratio: 0.0095
+
+  - ticker: ICLN
+    name: iShares Global Clean Energy ETF
+    category: thematic
+    sub_category: clean_energy
+    benchmark: S&P Global Clean Energy
+    expense_ratio: 0.0040
+
+  - ticker: HACK
+    name: ETFMG Prime Cyber Security ETF
+    category: thematic
+    sub_category: cybersecurity
+    benchmark: Prime Cyber Defense
+    expense_ratio: 0.0060
+
+  - ticker: CIBR
+    name: First Trust NASDAQ Cybersecurity ETF
+    category: thematic
+    sub_category: cybersecurity
+    benchmark: NASDAQ CTA Cybersecurity
+    expense_ratio: 0.0060
+
+  - ticker: FINX
+    name: Global X FinTech ETF
+    category: thematic
+    sub_category: fintech
+    benchmark: Indxx Global FinTech Thematic
+    expense_ratio: 0.0068
+
+  - ticker: DRIV
+    name: Global X Autonomous & Electric Vehicles ETF
+    category: thematic
+    sub_category: ev_autonomous
+    benchmark: Solactive Autonomous & Electric Vehicles
+    expense_ratio: 0.0068
+
+  - ticker: CLOUD
+    name: Global X Cloud Computing ETF
+    category: thematic
+    sub_category: cloud_computing
+    benchmark: Indxx Global Cloud Computing
+    expense_ratio: 0.0068
+
+  - ticker: AIQ
+    name: Global X Artificial Intelligence & Technology ETF
+    category: thematic
+    sub_category: artificial_intelligence
+    benchmark: Indxx Artificial Intelligence & Big Data
+    expense_ratio: 0.0068
+
+  - ticker: HERO
+    name: Global X Video Games & Esports ETF
+    category: thematic
+    sub_category: gaming_esports
+    benchmark: Solactive Video Games & Esports
+    expense_ratio: 0.0050
+
+  - ticker: BLOK
+    name: Amplify Transformational Data Sharing ETF
+    category: thematic
+    sub_category: blockchain
+    benchmark: Active
+    expense_ratio: 0.0071
+
+  - ticker: XITK
+    name: SPDR FactSet Innovative Technology ETF
+    category: thematic
+    sub_category: innovative_tech
+    benchmark: FactSet Innovative Technology
+    expense_ratio: 0.0045
+
+  # ── Volatility / Macro Hedge ──────────────────────────────────
+  - ticker: VIXY
+    name: ProShares VIX Short-Term Futures ETF
+    category: volatility
+    sub_category: long_volatility
+    benchmark: S&P 500 VIX Short-Term Futures
+    expense_ratio: 0.0085
+
+  - ticker: SVXY
+    name: ProShares Short VIX Short-Term Futures ETF
+    category: volatility
+    sub_category: short_volatility
+    benchmark: S&P 500 VIX Short-Term Futures (Short)
+    expense_ratio: 0.0095
+
+  - ticker: TAIL
+    name: Cambria Tail Risk ETF
+    category: volatility
+    sub_category: tail_risk_hedge
+    benchmark: Active
+    expense_ratio: 0.0059
+
+  - ticker: DBMF
+    name: iMGP DBi Managed Futures Strategy ETF
+    category: volatility
+    sub_category: managed_futures
+    benchmark: Active
+    expense_ratio: 0.0085
+
+  - ticker: BTAL
+    name: AGF US Market Neutral Anti-Beta Fund
+    category: volatility
+    sub_category: market_neutral
+    benchmark: Active
+    expense_ratio: 0.0076
+
+  # ── Multi-Asset / Balanced ────────────────────────────────────
+  - ticker: AOM
+    name: iShares Core Moderate Allocation ETF
+    category: multi_asset
+    sub_category: moderate_allocation
+    benchmark: S&P Target Risk Moderate
+    expense_ratio: 0.0015
+
+  - ticker: AOR
+    name: iShares Core Growth Allocation ETF
+    category: multi_asset
+    sub_category: growth_allocation
+    benchmark: S&P Target Risk Growth
+    expense_ratio: 0.0015
+
+  - ticker: AOA
+    name: iShares Core Aggressive Allocation ETF
+    category: multi_asset
+    sub_category: aggressive_allocation
+    benchmark: S&P Target Risk Aggressive
+    expense_ratio: 0.0015
+
+  - ticker: RPAR
+    name: RPAR Risk Parity ETF
+    category: multi_asset
+    sub_category: risk_parity
+    benchmark: Active
+    expense_ratio: 0.0050
+
+  - ticker: NTSX
+    name: WisdomTree US Efficient Core Fund
+    category: multi_asset
+    sub_category: leveraged_balanced
+    benchmark: Active
+    expense_ratio: 0.0020

@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Default Light Mode Variables */
+:root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-subtle: #f1f5f9;
+  --border-color: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-[#11141A]: #1e293b;
+}
+
+/* Dark Mode Variables */
+.dark {
+  --bg-main: #090b0e;
+  --bg-card: #11141a;
+  --bg-card-subtle: #0d0f14;
+  --border-color: #1e2330;
+  --border-hover: #2a3042;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Minimalist financial card style */
+.card-panel {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}
+
+.card-panel-hover:hover {
+  border-color: var(--border-hover);
+}
+
+.card-subtle {
+  background-color: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}

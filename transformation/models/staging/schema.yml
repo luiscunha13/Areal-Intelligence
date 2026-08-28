@@ -1,0 +1,65 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw production tables — written by ingestion loaders"
+    schema: public
+    tables:
+      - name: macro_observations
+        description: "All macro time-series observations from FRED and derived sources"
+        columns:
+          - name: series_id
+            tests: [not_null]
+          - name: date
+            tests: [not_null]
+          - name: value
+            tests: [not_null]
+
+      - name: prices
+        description: "EOD OHLCV prices for all catalog tickers"
+        columns:
+          - name: ticker
+            tests: [not_null]
+          - name: date
+            tests: [not_null]
+          - name: close
+            tests: [not_null]
+
+      - name: macro_series
+        description: "Macro series catalog (asset registry)"
+        columns:
+          - name: series_id
+            tests: [unique, not_null]
+
+      - name: etfs
+        description: "ETF catalog (asset registry)"
+        columns:
+          - name: ticker
+            tests: [unique, not_null]
+
+      - name: sectors
+        description: "GICS sector definitions"
+        columns:
+          - name: code
+            tests: [unique, not_null]
+
+models:
+  - name: stg_macro_observations
+    description: "Cleaned, deduplicated macro observations"
+    columns:
+      - name: series_id
+        tests: [not_null]
+      - name: obs_date
+        tests: [not_null]
+      - name: obs_value
+        tests: [not_null]
+
+  - name: stg_prices
+    description: "Cleaned, deduplicated OHLCV prices with ETF catalog metadata"
+    columns:
+      - name: ticker
+        tests: [not_null]
+      - name: price_date
+        tests: [not_null]
+      - name: adj_close_price
+        tests: [not_null]

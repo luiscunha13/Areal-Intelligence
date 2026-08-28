@@ -1,0 +1,46 @@
+# Sector Definitions Catalog
+sectors:
+  - code: XLK
+    name: Information Technology
+    etf_ticker: XLK
+    description: Software, hardware, semiconductors, IT services
+  - code: XLF
+    name: Financials
+    etf_ticker: XLF
+    description: Banks, insurance, asset management, REITs (financial)
+  - code: XLE
+    name: Energy
+    etf_ticker: XLE
+    description: Oil & gas exploration, refining, equipment services
+  - code: XLV
+    name: Health Care
+    etf_ticker: XLV
+    description: Pharmaceuticals, biotech, medical devices, health services
+  - code: XLI
+    name: Industrials
+    etf_ticker: XLI
+    description: Aerospace, defense, machinery, transportation
+  - code: XLY
+    name: Consumer Discretionary
+    etf_ticker: XLY
+    description: Retail, autos, media, hotels, restaurants
+  - code: XLP
+    name: Consumer Staples
+    etf_ticker: XLP
+    description: Food, beverages, tobacco, household products
+  - code: XLU
+    name: Utilities
+    etf_ticker: XLU
+    description: Electric, gas, water utilities
+  - code: XLRE
+    name: Real Estate
+    etf_ticker: XLRE
+    description: REITs — office, industrial, residential, retail
+  - code: XLC
+    name: Communication Services
+    etf_ticker: XLC
+    description: Telecom, media, interactive entertainment
+  - code: XLB
+    name: Materials
+    etf_ticker: XLB
+    description: Chemicals, metals, mining, paper, packaging

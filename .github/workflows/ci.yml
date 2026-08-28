@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install ruff pytest pyyaml sqlalchemy psycopg2-binary pandas numpy
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Validate YAML catalogs
+        run: python -c "
+          import yaml, pathlib
+          for f in pathlib.Path('catalog').glob('*.yaml'):
+              with open(f) as fh:
+                  yaml.safe_load(fh)
+              print(f'  ✅ {f.name}')
+          print('All catalog files are valid YAML')
+        "
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+        if: always()
+
+  catalog-sync-dry-run:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml sqlalchemy
+      - name: Dry-run catalog sync
+        run: python scripts/catalog_sync.py --dry-run

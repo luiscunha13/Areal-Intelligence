@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: mart_market_regimes
+    description: "Daily macro regime classification — quadrant, policy stance, FCA score"
+    columns:
+      - name: obs_date
+        tests: [not_null, unique]
+      - name: quadrant
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['goldilocks', 'reflation', 'stagflation', 'deflation']
+      - name: policy_stance
+        tests:
+          - accepted_values:
+              values: ['restrictive', 'neutral', 'accommodative', 'unknown']
+
+  - name: mart_etf_scores
+    description: "Daily ETF composite scores with momentum, Sharpe, and category rankings"
+    columns:
+      - name: ticker
+        tests: [not_null]
+      - name: price_date
+        tests: [not_null]
+      - name: composite_score
+        tests: [not_null]
+      - name: classification
+        tests:
+          - accepted_values:
+              values: ['strong_buy', 'buy', 'neutral', 'underperform', 'avoid']
+
+  - name: mart_sector_scores
+    description: "Dual-horizon RRG sector scores — tactical (50d) and strategic (260d)"
+    columns:
+      - name: ticker
+        tests: [not_null]
+      - name: price_date
+        tests: [not_null]
+      - name: horizon
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['tactical_50d', 'strategic_260d']
+      - name: rrg_quadrant
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['leading', 'improving', 'weakening', 'lagging']
+
+  - name: mart_stock_scores
+    description: "Daily multi-factor stock scores (momentum/trend/quality/value) with sector rankings"
+    columns:
+      - name: ticker
+        tests: [not_null]
+      - name: price_date
+        tests: [not_null]
+      - name: composite_score
+        tests: [not_null]
+      - name: classification
+        tests:
+          - accepted_values:
+              values: ['leading', 'improving', 'weakening', 'lagging']

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Environment
+.env
+*.env.local
+
+# Database
+*.sqlite
+*.db
+
+# Airflow
+airflow/logs/
+airflow/plugins/__pycache__/
+
+# dbt
+transformation/target/
+transformation/logs/
+transformation/.user.yml
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+
+# Docker
+.docker-data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
