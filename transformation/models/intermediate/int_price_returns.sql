@@ -78,20 +78,20 @@ returns as (
         etf_sub_category,
 
         -- Returns
-        case when price_1d_ago  > 0 then round((adj_close_price - price_1d_ago)  / price_1d_ago  * 100, 4) end as ret_1d,
-        case when price_1m_ago  > 0 then round((adj_close_price - price_1m_ago)  / price_1m_ago  * 100, 4) end as ret_1m,
-        case when price_3m_ago  > 0 then round((adj_close_price - price_3m_ago)  / price_3m_ago  * 100, 4) end as ret_3m,
-        case when price_6m_ago  > 0 then round((adj_close_price - price_6m_ago)  / price_6m_ago  * 100, 4) end as ret_6m,
-        case when price_12m_ago > 0 then round((adj_close_price - price_12m_ago) / price_12m_ago * 100, 4) end as ret_12m,
+        case when price_1d_ago  > 0 then round(((adj_close_price - price_1d_ago)  / price_1d_ago  * 100)::numeric, 4) end as ret_1d,
+        case when price_1m_ago  > 0 then round(((adj_close_price - price_1m_ago)  / price_1m_ago  * 100)::numeric, 4) end as ret_1m,
+        case when price_3m_ago  > 0 then round(((adj_close_price - price_3m_ago)  / price_3m_ago  * 100)::numeric, 4) end as ret_3m,
+        case when price_6m_ago  > 0 then round(((adj_close_price - price_6m_ago)  / price_6m_ago  * 100)::numeric, 4) end as ret_6m,
+        case when price_12m_ago > 0 then round(((adj_close_price - price_12m_ago) / price_12m_ago * 100)::numeric, 4) end as ret_12m,
 
         -- Volatility (annualised)
-        round(volatility_20d_ann * 100, 4) as volatility_ann_pct,
+        round((volatility_20d_ann * 100)::numeric, 4) as volatility_ann_pct,
 
         -- Simplified Sharpe: ret_12m / volatility (not risk-free adjusted — good enough for ranking)
         case
             when volatility_20d_ann > 0 and price_12m_ago > 0
             then round(
-                ((adj_close_price - price_12m_ago) / price_12m_ago) / volatility_20d_ann,
+                (((adj_close_price - price_12m_ago) / price_12m_ago) / volatility_20d_ann)::numeric,
                 4
             )
         end as sharpe_approx_1y,
@@ -99,11 +99,11 @@ returns as (
         -- 52-week position (0 = at low, 1 = at high)
         case
             when high_52w > low_52w
-            then round((adj_close_price - low_52w) / (high_52w - low_52w), 4)
+            then round(((adj_close_price - low_52w) / (high_52w - low_52w))::numeric, 4)
         end as pct_52w_range,
 
-        round(high_52w, 4) as high_52w,
-        round(low_52w, 4) as low_52w,
+        round(high_52w::numeric, 4) as high_52w,
+        round(low_52w::numeric, 4) as low_52w,
 
         now() as computed_at
 

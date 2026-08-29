@@ -60,7 +60,7 @@ joined as (
         f.debt_to_equity
     from returns r
     left join fundamentals f on f.ticker = r.ticker
-    where r.ret_12m is not null
+    where r.ret_1m is not null
 ),
 
 -- Cross-sectional percentile ranks per date
@@ -103,17 +103,17 @@ scored as (
         pct_52w_range, pe_ratio, pb_ratio, roe, debt_to_equity,
 
         -- Factor scores (weighted percentile ranks)
-        round((pr_1m * 0.10 + pr_3m * 0.25 + pr_6m * 0.35 + pr_12m * 0.30), 2)  as momentum_score,
-        round((pr_52w * 0.60 + pr_sharpe * 0.40), 2)                              as trend_score,
-        round((pr_roe * 0.60 + pr_de * 0.40), 2)                                  as quality_score,
-        round((pr_pe * 0.50 + pr_pb * 0.50), 2)                                   as value_score,
+        round((pr_1m * 0.10 + pr_3m * 0.25 + pr_6m * 0.35 + pr_12m * 0.30)::numeric, 2)  as momentum_score,
+        round((pr_52w * 0.60 + pr_sharpe * 0.40)::numeric, 2)                              as trend_score,
+        round((pr_roe * 0.60 + pr_de * 0.40)::numeric, 2)                                  as quality_score,
+        round((pr_pe * 0.50 + pr_pb * 0.50)::numeric, 2)                                   as value_score,
 
         -- Composite (weighted factors)
         round(
-            (pr_1m * 0.10 + pr_3m * 0.25 + pr_6m * 0.35 + pr_12m * 0.30) * 0.35
-          + (pr_52w * 0.60 + pr_sharpe * 0.40) * 0.25
-          + (pr_roe * 0.60 + pr_de * 0.40) * 0.25
-          + (pr_pe  * 0.50 + pr_pb * 0.50) * 0.15,
+            ((pr_1m * 0.10 + pr_3m * 0.25 + pr_6m * 0.35 + pr_12m * 0.30) * 0.35
+           + (pr_52w * 0.60 + pr_sharpe * 0.40) * 0.25
+           + (pr_roe * 0.60 + pr_de * 0.40) * 0.25
+           + (pr_pe  * 0.50 + pr_pb * 0.50) * 0.15)::numeric,
         2) as composite_score
 
     from ranked

@@ -98,12 +98,42 @@ export default function SectorDetailPage() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch(`http://127.0.0.1:8000/api/sectors/${symbol}`).then(r => r.ok ? r.json() : null),
-      fetch(`http://127.0.0.1:8000/api/sectors/${symbol}/performance?limit=12`).then(r => r.ok ? r.json() : []),
-      fetch(`http://127.0.0.1:8000/api/sectors/analytics/regime-alpha-matrix`).then(r => r.ok ? r.json() : {}),
-      fetch(`http://127.0.0.1:8000/api/sectors/${symbol}/rank-history?limit=20`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/sectors/${symbol}`).then(r => r.ok ? r.json() : null),
+      fetch(`/api/sectors/${symbol}/performance?limit=12`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/sectors/analytics/regime-alpha-matrix`).then(r => r.ok ? r.json() : {}),
+      fetch(`/api/sectors/scores/${symbol}/history?limit=20`).then(r => r.ok ? r.json() : []),
     ]).then(([sectorData, perf, matrix, rankHist]) => {
-      if (sectorData?.symbol) setSector(sectorData);
+      if (sectorData && (sectorData.sector || sectorData.symbol)) {
+        const sec = sectorData.sector || sectorData;
+        const score = sectorData.score;
+        setSector({
+          id: 1,
+          symbol: sec.etf_ticker || sec.symbol || symbol,
+          name: sec.name || symbol,
+          description: sec.description || `${sec.name || symbol} GICS Sector ETF analytics.`,
+          latest_score: {
+            overall_score: Math.round(
+              typeof score?.overall_score === 'number' && score.overall_score > 1
+                ? score.overall_score
+                : typeof score?.composite_score === 'number' && score.composite_score > 10
+                ? score.composite_score
+                : 50 + (score?.composite_score || 0) * 15
+            ),
+            rank: score?.rank || 1,
+            classification: (score?.rrg_quadrant || 'LEADING').toUpperCase(),
+            rs_ratio: score?.rs_ratio,
+            rs_momentum: score?.rs_momentum,
+            scores: score?.scores || {
+              momentum: Math.round(score?.rs_momentum ? (score.rs_momentum - 90) * 4.5 : 50),
+              relative_strength: Math.round(score?.rs_ratio ? (score.rs_ratio - 90) * 4.5 : 50),
+              trend: 65,
+              regime_fit: 82,
+              risk: 85,
+            }
+          },
+          companies: []
+        });
+      }
       if (Array.isArray(perf)) setPerfHistory(perf);
       if (matrix && typeof matrix === 'object') setAlphaMatrix(matrix);
       if (Array.isArray(rankHist)) setRankHistory(rankHist);

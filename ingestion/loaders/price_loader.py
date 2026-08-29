@@ -9,6 +9,7 @@ import yaml
 from datetime import date, timedelta
 from typing import Optional
 
+import pandas as pd
 from sqlalchemy import text
 
 from ingestion.base import BaseLoader
@@ -54,15 +55,18 @@ class PriceLoader(BaseLoader):
         rows = []
         for ticker, df in raw.items():
             for _, row in df.iterrows():
+                d = row["date"]
+                if hasattr(d, "date") and not isinstance(d, date):
+                    d = d.date()
                 rows.append({
                     "ticker": ticker,
-                    "date": row["date"],
-                    "open": float(row["open"]) if row["open"] else None,
-                    "high": float(row["high"]) if row["high"] else None,
-                    "low": float(row["low"]) if row["low"] else None,
+                    "date": d,
+                    "open": float(row["open"]) if pd.notnull(row["open"]) else None,
+                    "high": float(row["high"]) if pd.notnull(row["high"]) else None,
+                    "low": float(row["low"]) if pd.notnull(row["low"]) else None,
                     "close": float(row["close"]),
-                    "adj_close": float(row["adj_close"]) if row.get("adj_close") else float(row["close"]),
-                    "volume": int(row["volume"]) if row.get("volume") else None,
+                    "adj_close": float(row["adj_close"]) if pd.notnull(row.get("adj_close")) else float(row["close"]),
+                    "volume": int(row["volume"]) if pd.notnull(row.get("volume")) else None,
                     "source": "yfinance",
                     "run_id": self.run_id,
                 })

@@ -571,7 +571,7 @@ etfs:
     benchmark: Solactive Autonomous & Electric Vehicles
     expense_ratio: 0.0068
 
-  - ticker: CLOUD
+  - ticker: CLOU
     name: Global X Cloud Computing ETF
     category: thematic
     sub_category: cloud_computing

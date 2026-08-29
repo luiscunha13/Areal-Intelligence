@@ -17,12 +17,18 @@ import subprocess
 import logging
 from datetime import datetime, timedelta
 
-from airflow import DAG
-from airflow.operators.python import PythonOperator
+try:
+    from airflow import DAG
+    from airflow.operators.python import PythonOperator
+    HAS_AIRFLOW = True
+except ImportError:
+    HAS_AIRFLOW = False
+    DAG = None
+    PythonOperator = None
 
 logger = logging.getLogger(__name__)
 
-DBT_DIR = "/opt/airflow/src/transformation"
+DBT_DIR = os.environ.get("DBT_DIR", "/app/transformation" if os.path.exists("/app/transformation") else "/opt/airflow/src/transformation")
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/arealdb")
 
 default_args = {
@@ -35,8 +41,10 @@ default_args = {
 
 def run_dbt(select: str, **context):
     """Run a dbt command and raise on failure."""
+    import shutil
+    dbt_bin = shutil.which("dbt") or "/home/airflow/.local/bin/dbt"
     cmd = [
-        "dbt", "run",
+        dbt_bin, "run",
         "--select", select,
         "--profiles-dir", DBT_DIR,
         "--project-dir", DBT_DIR,
@@ -51,8 +59,10 @@ def run_dbt(select: str, **context):
 
 
 def run_dbt_test(**context):
+    import shutil
+    dbt_bin = shutil.which("dbt") or "/home/airflow/.local/bin/dbt"
     cmd = [
-        "dbt", "test",
+        dbt_bin, "test",
         "--profiles-dir", DBT_DIR,
         "--project-dir", DBT_DIR,
     ]
@@ -83,7 +93,7 @@ def sync_marts_to_production(**context):
             SELECT
                 obs_date, quadrant, growth_momentum, inflation_momentum,
                 fca_score, policy_stance, confidence, scoring_version, computed_at
-            FROM marts.mart_market_regimes
+            FROM public_marts.mart_market_regimes
             ON CONFLICT (date) DO UPDATE SET
                 quadrant = EXCLUDED.quadrant,
                 growth_momentum = EXCLUDED.growth_momentum,
@@ -106,7 +116,7 @@ def sync_marts_to_production(**context):
                 ticker, price_date, ret_1m, ret_3m, ret_6m, ret_12m,
                 sharpe_approx_1y, volatility_ann_pct, composite_score,
                 rank_overall, rank_category, scoring_version, computed_at
-            FROM marts.mart_etf_scores
+            FROM public_marts.mart_etf_scores
             ON CONFLICT (ticker, date) DO UPDATE SET
                 momentum_1m = EXCLUDED.momentum_1m,
                 momentum_3m = EXCLUDED.momentum_3m,
@@ -122,7 +132,8 @@ def sync_marts_to_production(**context):
         """))
         logger.info("✅ etf_scores synced")
 
-        # Sector scores
+        # Sector scores — delete all rows first so warmup-period exclusion takes effect
+        conn.execute(text("TRUNCATE TABLE sector_scores"))
         conn.execute(text("""
             INSERT INTO sector_scores
                 (ticker, date, horizon, rs_ratio, rs_momentum, rrg_quadrant,
@@ -130,15 +141,7 @@ def sync_marts_to_production(**context):
             SELECT
                 ticker, price_date, horizon, rs_ratio, rs_momentum, rrg_quadrant,
                 composite_score, rank, scoring_version, computed_at
-            FROM marts.mart_sector_scores
-            ON CONFLICT (ticker, date, horizon) DO UPDATE SET
-                rs_ratio = EXCLUDED.rs_ratio,
-                rs_momentum = EXCLUDED.rs_momentum,
-                rrg_quadrant = EXCLUDED.rrg_quadrant,
-                composite_score = EXCLUDED.composite_score,
-                rank = EXCLUDED.rank,
-                scoring_version = EXCLUDED.scoring_version,
-                computed_at = EXCLUDED.computed_at
+            FROM public_marts.mart_sector_scores
         """))
         logger.info("✅ sector_scores synced")
 
@@ -152,7 +155,7 @@ def sync_marts_to_production(**context):
                 ticker, price_date, momentum_score, trend_score, quality_score,
                 value_score, composite_score, rank_overall, rank_sector,
                 classification, scoring_version, computed_at
-            FROM marts.mart_stock_scores
+            FROM public_marts.mart_stock_scores
             ON CONFLICT (ticker, date) DO UPDATE SET
                 momentum_score = EXCLUDED.momentum_score,
                 trend_score = EXCLUDED.trend_score,
@@ -167,49 +170,72 @@ def sync_marts_to_production(**context):
         """))
         logger.info("✅ stock_scores synced")
 
+        # Macro features — z-scores, momentum, trend for every series
+        # dbt writes to public_intermediate.int_macro_features; the API reads from public.macro_features
+        conn.execute(text("""
+            INSERT INTO macro_features
+                (series_id, date, value_mom_1m, value_mom_3m, value_yoy,
+                 z_score_2y, z_score_5y, trend, scoring_version, computed_at)
+            SELECT
+                series_id, obs_date, value_mom_1m, value_mom_3m, value_yoy,
+                z_score_2y, z_score_5y, trend, scoring_version, computed_at
+            FROM public_intermediate.int_macro_features
+            ON CONFLICT (series_id, date) DO UPDATE SET
+                value_mom_1m    = EXCLUDED.value_mom_1m,
+                value_mom_3m    = EXCLUDED.value_mom_3m,
+                value_yoy       = EXCLUDED.value_yoy,
+                z_score_2y      = EXCLUDED.z_score_2y,
+                z_score_5y      = EXCLUDED.z_score_5y,
+                trend           = EXCLUDED.trend,
+                scoring_version = EXCLUDED.scoring_version,
+                computed_at     = EXCLUDED.computed_at
+        """))
+        logger.info("✅ macro_features synced")
 
-with DAG(
-    dag_id="scoring_engine",
-    description="dbt transform pipeline — staging → intermediate → marts → production sync",
-    schedule="0 23 * * 1-5",   # 23:00 UTC, Mon–Fri (after market_prices at 22:00)
-    start_date=datetime(2026, 1, 1),
-    catchup=False,
-    max_active_runs=1,
-    tags=["scoring", "dbt", "transforms"],
-    default_args=default_args,
-) as dag:
 
-    t_staging = PythonOperator(
-        task_id="dbt_staging",
-        python_callable=run_dbt,
-        op_kwargs={"select": "staging"},
-        doc_md="Clean + deduplicate raw ingested data.",
-    )
+if HAS_AIRFLOW:
+    with DAG(
+        dag_id="scoring_engine",
+        description="dbt transform pipeline — staging → intermediate → marts → production sync",
+        schedule="0 23 * * 1-5",   # 23:00 UTC, Mon–Fri (after market_prices at 22:00)
+        start_date=datetime(2026, 1, 1),
+        catchup=False,
+        max_active_runs=1,
+        tags=["scoring", "dbt", "transforms"],
+        default_args=default_args,
+    ) as dag:
 
-    t_intermediate = PythonOperator(
-        task_id="dbt_intermediate",
-        python_callable=run_dbt,
-        op_kwargs={"select": "intermediate"},
-        doc_md="Compute macro features and price returns.",
-    )
+        t_staging = PythonOperator(
+            task_id="dbt_staging",
+            python_callable=run_dbt,
+            op_kwargs={"select": "staging"},
+            doc_md="Clean + deduplicate raw ingested data.",
+        )
 
-    t_marts = PythonOperator(
-        task_id="dbt_marts",
-        python_callable=run_dbt,
-        op_kwargs={"select": "marts"},
-        doc_md="Compute regime, ETF scores, and sector RRG.",
-    )
+        t_intermediate = PythonOperator(
+            task_id="dbt_intermediate",
+            python_callable=run_dbt,
+            op_kwargs={"select": "intermediate"},
+            doc_md="Compute macro features and price returns.",
+        )
 
-    t_test = PythonOperator(
-        task_id="dbt_test",
-        python_callable=run_dbt_test,
-        doc_md="Run all dbt data quality tests on mart outputs.",
-    )
+        t_marts = PythonOperator(
+            task_id="dbt_marts",
+            python_callable=run_dbt,
+            op_kwargs={"select": "marts"},
+            doc_md="Compute regime, ETF scores, and sector RRG.",
+        )
 
-    t_sync = PythonOperator(
-        task_id="sync_to_production",
-        python_callable=sync_marts_to_production,
-        doc_md="Merge dbt mart tables into canonical production tables for API.",
-    )
+        t_test = PythonOperator(
+            task_id="dbt_test",
+            python_callable=run_dbt_test,
+            doc_md="Run all dbt data quality tests on mart outputs.",
+        )
 
-    t_staging >> t_intermediate >> t_marts >> t_test >> t_sync
+        t_sync = PythonOperator(
+            task_id="sync_to_production",
+            python_callable=sync_marts_to_production,
+            doc_md="Merge dbt mart tables into canonical production tables for API.",
+        )
+
+        t_staging >> t_intermediate >> t_marts >> t_test >> t_sync

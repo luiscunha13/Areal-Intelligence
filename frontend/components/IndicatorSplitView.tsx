@@ -179,7 +179,7 @@ export const IndicatorSplitView: React.FC = () => {
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/macro/series');
+        const res = await fetch('/api/macro/series');
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -198,7 +198,7 @@ export const IndicatorSplitView: React.FC = () => {
 
   // 2. Fetch USREC NBER Recession Data
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/macro/series/USREC?limit=50000')
+    fetch('/api/macro/series/USREC?limit=50000')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.observations) {
@@ -217,7 +217,7 @@ export const IndicatorSplitView: React.FC = () => {
   useEffect(() => {
     const heatmapBenchmarks = ['SP500', 'IQ12260', 'DGS10', 'DTWEXBGS', 'VIXCLS'];
     heatmapBenchmarks.forEach((bmId) => {
-      fetch(`http://127.0.0.1:8000/api/macro/series/${bmId}?limit=5000`)
+      fetch(`/api/macro/series/${bmId}?limit=5000`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.observations) {
@@ -240,7 +240,7 @@ export const IndicatorSplitView: React.FC = () => {
     const fetchSeriesData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/macro/series/${selectedId}?limit=50000`);
+        const res = await fetch(`/api/macro/series/${selectedId}?limit=50000`);
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {
@@ -279,7 +279,7 @@ export const IndicatorSplitView: React.FC = () => {
     }
     let isMounted = true;
     setLoadingCompare(true);
-    fetch(`http://127.0.0.1:8000/api/macro/series/${compareId}?limit=50000`)
+    fetch(`/api/macro/series/${compareId}?limit=50000`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isMounted && data && data.observations) {

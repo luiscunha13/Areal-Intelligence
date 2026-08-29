@@ -59,7 +59,7 @@ cross_sectional as (
         percent_rank() over (partition by price_date order by volatility_ann_pct desc nulls last) * 100 as pct_rank_vol
 
     from returns
-    where ret_12m is not null  -- need at least 12m of data
+    where ret_1m is not null  -- need at least 1m of data
 ),
 
 scored as (
@@ -78,30 +78,30 @@ scored as (
         high_52w,
         low_52w,
 
-        -- Composite score: weighted percentile ranks
+        -- Composite score: weighted percentile ranks with fallback coalescing
         -- Weights: 1m=10%, 3m=20%, 6m=30%, 12m=25%, sharpe=10%, vol=5%
         round(
-            pct_rank_1m   * 0.10
-            + pct_rank_3m   * 0.20
-            + pct_rank_6m   * 0.30
-            + pct_rank_12m  * 0.25
-            + pct_rank_sharpe * 0.10
-            + pct_rank_vol  * 0.05,
+            (coalesce(pct_rank_1m, 50.0) * 0.10
+            + coalesce(pct_rank_3m, pct_rank_1m, 50.0) * 0.20
+            + coalesce(pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.30
+            + coalesce(pct_rank_12m, pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.25
+            + coalesce(pct_rank_sharpe, pct_rank_1m, 50.0) * 0.10
+            + coalesce(pct_rank_vol, 50.0) * 0.05)::numeric,
         2) as composite_score,
 
         -- Classification thresholds
         case
-            when (pct_rank_1m * 0.10 + pct_rank_3m * 0.20 + pct_rank_6m * 0.30
-                  + pct_rank_12m * 0.25 + pct_rank_sharpe * 0.10 + pct_rank_vol * 0.05) >= 80
+            when (coalesce(pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_3m, pct_rank_1m, 50.0) * 0.20 + coalesce(pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.30
+                  + coalesce(pct_rank_12m, pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.25 + coalesce(pct_rank_sharpe, pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_vol, 50.0) * 0.05) >= 80
                 then 'strong_buy'
-            when (pct_rank_1m * 0.10 + pct_rank_3m * 0.20 + pct_rank_6m * 0.30
-                  + pct_rank_12m * 0.25 + pct_rank_sharpe * 0.10 + pct_rank_vol * 0.05) >= 60
+            when (coalesce(pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_3m, pct_rank_1m, 50.0) * 0.20 + coalesce(pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.30
+                  + coalesce(pct_rank_12m, pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.25 + coalesce(pct_rank_sharpe, pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_vol, 50.0) * 0.05) >= 60
                 then 'buy'
-            when (pct_rank_1m * 0.10 + pct_rank_3m * 0.20 + pct_rank_6m * 0.30
-                  + pct_rank_12m * 0.25 + pct_rank_sharpe * 0.10 + pct_rank_vol * 0.05) >= 40
+            when (coalesce(pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_3m, pct_rank_1m, 50.0) * 0.20 + coalesce(pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.30
+                  + coalesce(pct_rank_12m, pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.25 + coalesce(pct_rank_sharpe, pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_vol, 50.0) * 0.05) >= 40
                 then 'neutral'
-            when (pct_rank_1m * 0.10 + pct_rank_3m * 0.20 + pct_rank_6m * 0.30
-                  + pct_rank_12m * 0.25 + pct_rank_sharpe * 0.10 + pct_rank_vol * 0.05) >= 20
+            when (coalesce(pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_3m, pct_rank_1m, 50.0) * 0.20 + coalesce(pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.30
+                  + coalesce(pct_rank_12m, pct_rank_6m, pct_rank_3m, pct_rank_1m, 50.0) * 0.25 + coalesce(pct_rank_sharpe, pct_rank_1m, 50.0) * 0.10 + coalesce(pct_rank_vol, 50.0) * 0.05) >= 20
                 then 'underperform'
             else 'avoid'
         end as classification

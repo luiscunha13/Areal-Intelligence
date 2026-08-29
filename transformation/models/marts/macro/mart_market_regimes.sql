@@ -34,15 +34,23 @@ inflation as (
 ),
 
 nfci as (
-    select obs_date, obs_value as nfci_value
+    -- NFCI is weekly; aggregate to monthly average to align with monthly macro dates
+    select
+        date_trunc('month', obs_date)::date as month_date,
+        avg(obs_value) as nfci_value
     from {{ ref('stg_macro_observations') }}
     where series_id = 'NFCI'
+    group by 1
 ),
 
 hy_spread as (
-    select obs_date, z_score_2y as hy_z
+    -- BAMLH0A0HYM2 is daily; aggregate to monthly average z-score
+    select
+        date_trunc('month', obs_date)::date as month_date,
+        avg(z_score_2y) as hy_z
     from {{ ref('int_macro_features') }}
     where series_id = 'BAMLH0A0HYM2'
+    group by 1
 ),
 
 fed_funds as (
@@ -62,7 +70,7 @@ joined as (
         h.hy_z,
         f.ff_z,
 
-        -- Financial Conditions Amplifier: average of NFCI + HY spread z-score
+        -- Financial Conditions Amplifier: average of monthly NFCI + HY spread z-score
         -- Positive = tight conditions (bearish), Negative = loose (bullish)
         round(
             coalesce((n.nfci_value + coalesce(h.hy_z, 0)) / 2.0, n.nfci_value, 0),
@@ -70,8 +78,9 @@ joined as (
 
     from growth g
     left join inflation i on i.obs_date = g.obs_date
-    left join nfci n      on n.obs_date = g.obs_date
-    left join hy_spread h on h.obs_date = g.obs_date
+    -- Join NFCI and HY on month-truncated date to handle weekly/daily vs monthly frequency mismatch
+    left join nfci n      on n.month_date = date_trunc('month', g.obs_date)::date
+    left join hy_spread h on h.month_date = date_trunc('month', g.obs_date)::date
     left join fed_funds f on f.obs_date = g.obs_date
     where g.growth_momentum is not null
       and i.inflation_momentum is not null
@@ -101,10 +110,15 @@ classified as (
             else 'neutral'
         end as policy_stance,
 
-        -- Confidence: inversely related to how close to zero both momenta are
+        -- Confidence: use z-score magnitudes for regime conviction (0.0–1.0 scale)
+        -- A z-score of 2.0 in both growth and inflation → ~80% confidence
+        -- A z-score of 0.5 in both → ~25% confidence (near regime transition)
         round(
-            least(abs(growth_momentum), 5) / 5.0 * 0.5
-            + least(abs(inflation_momentum), 5) / 5.0 * 0.5,
+            least(
+                coalesce(abs(growth_z), 0) * 0.25
+                + coalesce(abs(inflation_z), 0) * 0.25
+                + least(abs(fca_score), 2.0) * 0.05,
+            1.0),
         4) as confidence,
 
         now()        as computed_at,

@@ -43,6 +43,19 @@ sources:
           - name: code
             tests: [unique, not_null]
 
+      - name: stocks
+        description: "Stock universe (S&P 500 constituents)"
+        columns:
+          - name: ticker
+            tests: [unique, not_null]
+
+      - name: financial_metrics
+        description: "Quarterly and annual fundamental financial metrics"
+        columns:
+          - name: ticker
+            tests: [not_null]
+
+
 models:
   - name: stg_macro_observations
     description: "Cleaned, deduplicated macro observations"

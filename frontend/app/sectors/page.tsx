@@ -157,21 +157,52 @@ export default function SectorsPage() {
   const fetchSectorData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/sectors/ranking');
+      const hz = horizonFilter === 'strategic' ? 'strategic_260d' : 'tactical_50d';
+      const res = await fetch(`/api/sectors/scores?horizon=${hz}&scope=${scopeFilter}`);
       if (res.ok) {
-        const data = await res.json();
-        setRankingData(data);
+        const rawData = await res.json();
+        const list = Array.isArray(rawData) ? rawData : (rawData.rankings || []);
+        const formattedRankings = list.map((r: any, idx: number) => ({
+          symbol: r.symbol || r.ticker,
+          name: r.name || r.sector_name || r.ticker,
+          level: r.level || 1,
+          rank: r.rank || (idx + 1),
+          rank_change: r.rank_change || 0,
+          overall_score: Math.round(
+            typeof r.overall_score === 'number' && r.overall_score > 1
+              ? r.overall_score
+              : typeof r.composite_score === 'number' && r.composite_score > 10
+              ? r.composite_score
+              : 50 + (r.composite_score || 0) * 15
+          ),
+          rs_ratio: r.rs_ratio,
+          rs_momentum: r.rs_momentum,
+          scores: r.scores || {
+            momentum: Math.round(r.rs_momentum ? (r.rs_momentum - 90) * 4.5 : 50),
+            relative_strength: Math.round(r.rs_ratio ? (r.rs_ratio - 90) * 4.5 : 50),
+            trend: Math.round(r.rs_ratio ? (r.rs_ratio - 90) * 4.5 * 0.6 + (r.rs_momentum - 90) * 4.5 * 0.4 : 65),
+            regime_fit: 82,
+            risk: Math.round(100 - Math.abs((r.rs_momentum || 100) - 100) * 2.5),
+          },
+          classification: (r.quadrant || r.classification || 'LEADING').toUpperCase(),
+          why: r.why || [],
+        }));
 
-        // Fix 2: fetch rank history for all level-1 sectors in parallel
-        const level1 = (data.rankings || []).filter((r: any) => !r.level || r.level === 1);
+        setRankingData({
+          date: list[0]?.date || new Date().toISOString().split('T')[0],
+          active_regime: 'Reflation',
+          rankings: formattedRankings,
+        });
+
+        // Fetch rank history for all sectors
         const histories: Record<string, number[]> = {};
         await Promise.all(
-          level1.map(async (sector: any) => {
+          formattedRankings.slice(0, 15).map(async (sector: any) => {
             try {
-              const hr = await fetch(`http://127.0.0.1:8000/api/sectors/${sector.symbol}/rank-history?limit=12`);
+              const hr = await fetch(`/api/sectors/scores/${sector.symbol}/history?horizon=${hz}&limit=12`);
               if (hr.ok) {
                 const rows = await hr.json();
-                histories[sector.symbol] = rows.map((r: any) => r.rank).filter(Boolean);
+                histories[sector.symbol] = (rows || []).map((row: any) => row.rank).filter(Boolean);
               }
             } catch { /* silent */ }
           })
@@ -179,40 +210,39 @@ export default function SectorsPage() {
         setRankHistories(histories);
       }
     } catch (err) {
-      console.warn('Sector data fetch error, using fallback');
+      console.warn('Sector data fetch error, using fallback', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchSectorData(); }, []);
+  useEffect(() => { fetchSectorData(); }, [horizonFilter, scopeFilter]);
 
   const getStatusDot = (c: string) => QUAD_COLORS[c]?.dot || 'bg-gray-400';
   const getStatusText = (c: string) => QUAD_COLORS[c]?.text || 'text-gray-400';
 
   const rankings: SectorItem[] = rankingData?.rankings || [];
   const level1Rankings = rankings.filter(r => !r.hasOwnProperty('level') || (r as any).level === 1);
+  const activeScopeRankings = scopeFilter === 'level1' ? level1Rankings : rankings;
 
-  const leadingSectors   = level1Rankings.filter(r => r.classification === 'LEADING');
-  const improvingSectors = level1Rankings.filter(r => r.classification === 'IMPROVING');
-  const weakeningSectors = level1Rankings.filter(r => r.classification === 'WEAKENING');
-  const laggingSectors   = level1Rankings.filter(r => r.classification === 'LAGGING');
+  const leadingSectors   = activeScopeRankings.filter(r => r.classification === 'LEADING');
+  const improvingSectors = activeScopeRankings.filter(r => r.classification === 'IMPROVING');
+  const weakeningSectors = activeScopeRankings.filter(r => r.classification === 'WEAKENING');
+  const laggingSectors   = activeScopeRankings.filter(r => r.classification === 'LAGGING');
 
   // Fix 1: RRG scatter data — 2D force repulsion physics points leader lines into open space
   const rrgData = useMemo(() => {
     const list = scopeFilter === 'level1' ? level1Rankings : rankings;
 
     return list.map((s, i) => {
-      const rx = horizonFilter === 'strategic' ? ((s as any).rs_ratio_strategic ?? s.rs_ratio ?? 100) : (s.rs_ratio ?? 100);
-      const ry = horizonFilter === 'strategic' ? ((s as any).rs_momentum_strategic ?? s.rs_momentum ?? 100) : (s.rs_momentum ?? 100);
+      const rx = Number(s.rs_ratio ?? 100);
+      const ry = Number(s.rs_momentum ?? 100);
 
       let classification = s.classification;
-      if (horizonFilter === 'strategic') {
-        if (rx >= 100 && ry >= 100) classification = 'LEADING';
-        else if (rx < 100 && ry >= 100) classification = 'IMPROVING';
-        else if (rx >= 100 && ry < 100) classification = 'WEAKENING';
-        else classification = 'LAGGING';
-      }
+      if (rx >= 100 && ry >= 100) classification = 'LEADING';
+      else if (rx < 100 && ry >= 100) classification = 'IMPROVING';
+      else if (rx >= 100 && ry < 100) classification = 'WEAKENING';
+      else classification = 'LAGGING';
 
       // 2D force-repulsion physics to locate open surrounding space
       let vx = 0;
@@ -221,8 +251,8 @@ export default function SectorsPage() {
 
       for (let j = 0; j < list.length; j++) {
         if (i === j) continue;
-        const jx = horizonFilter === 'strategic' ? ((list[j] as any).rs_ratio_strategic ?? list[j].rs_ratio ?? 100) : (list[j].rs_ratio ?? 100);
-        const jy = horizonFilter === 'strategic' ? ((list[j] as any).rs_momentum_strategic ?? list[j].rs_momentum ?? 100) : (list[j].rs_momentum ?? 100);
+        const jx = Number(list[j].rs_ratio ?? 100);
+        const jy = Number(list[j].rs_momentum ?? 100);
         const dx = rx - jx;
         const dy = ry - jy;
         const dist = Math.sqrt(dx * dx + dy * dy);

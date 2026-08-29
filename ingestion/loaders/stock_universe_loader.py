@@ -34,7 +34,11 @@ class StockUniverseLoader(BaseLoader):
     def fetch(self) -> list[dict]:
         """Fetch S&P 500 tickers from Wikipedia."""
         logger.info("Fetching S&P 500 universe from Wikipedia")
-        tables = pd.read_html(SP500_WIKI_URL)
+        import requests
+        import io
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        resp = requests.get(SP500_WIKI_URL, headers=headers)
+        tables = pd.read_html(io.StringIO(resp.text))
         df = tables[0]
         df.columns = [c.lower().replace(" ", "_") for c in df.columns]
 

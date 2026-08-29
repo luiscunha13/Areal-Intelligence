@@ -3,7 +3,7 @@ areal_intelligence:
   outputs:
     dev:
       type: postgres
-      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
       port: 5432
       user: postgres
       password: postgres

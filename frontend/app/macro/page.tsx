@@ -15,8 +15,8 @@ export default function MacroPage() {
     setLoading(true);
     try {
       const [regimeRes, historyRes] = await Promise.all([
-        fetch('http://127.0.0.1:8000/api/regime/current'),
-        fetch('http://127.0.0.1:8000/api/regime/history?limit=60'),
+        fetch('/api/macro/regime/current'),
+        fetch('/api/macro/regime?limit=60'),
       ]);
 
       if (regimeRes.ok) {

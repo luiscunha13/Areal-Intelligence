@@ -51,23 +51,33 @@ class YFinanceClient:
             logger.warning(f"No price data for {ticker}")
             return pd.DataFrame()
 
-        # Flatten multi-level columns if present
+        # Handle MultiIndex columns if present
         if isinstance(df.columns, pd.MultiIndex):
-            df.columns = [col[0].lower().replace(" ", "_") for col in df.columns]
-        else:
-            df.columns = [c.lower().replace(" ", "_") for c in df.columns]
+            df.columns = df.columns.get_level_values(0)
 
-        df = df.rename(columns={"adj_close": "adj_close"}).reset_index()
-        df["date"] = pd.to_datetime(df["Date"]).dt.date
-        df = df.rename(columns={
-            "Open": "open", "High": "high", "Low": "low",
-            "Close": "close", "Adj Close": "adj_close", "Volume": "volume"
-        })
+        df = df.reset_index()
 
-        # Normalize column names regardless of case
-        df.columns = [c.lower() for c in df.columns]
-        df = df[["date", "open", "high", "low", "close", "adj_close", "volume"]]
-        df = df.dropna(subset=["close"])
+        # Deduplicate columns if any
+        df = df.loc[:, ~df.columns.duplicated()]
+
+        # Find Date column
+        date_col = next((c for c in df.columns if str(c).lower() == 'date'), df.columns[0])
+
+        col_map = {}
+        for c in df.columns:
+            cl = str(c).lower().replace(" ", "_")
+            if cl in ['open', 'high', 'low', 'close', 'adj_close', 'volume']:
+                col_map[c] = cl
+            elif c == date_col:
+                col_map[c] = 'date'
+
+        df = df.rename(columns=col_map)
+        if 'adj_close' not in df.columns and 'close' in df.columns:
+            df['adj_close'] = df['close']
+
+        df['date'] = pd.to_datetime(df['date']).dt.date
+        df = df[['date', 'open', 'high', 'low', 'close', 'adj_close', 'volume']]
+        df = df.dropna(subset=['close'])
         return df
 
     def fetch_prices_batch(

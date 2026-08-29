@@ -19,7 +19,7 @@
 with sector_prices as (
     select ticker, price_date, adj_close_price
     from {{ ref('stg_prices') }}
-    where ticker in ('XLK','XLF','XLE','XLV','XLI','XLY','XLP','XLU','XLRE','XLC','XLB')
+    where ticker != 'SPY'
 ),
 
 spy as (
@@ -47,7 +47,12 @@ rrg_features as (
         price_date,
         relative_price,
 
-        -- Tactical (50d) horizon
+        -- Row number per ticker (used to enforce warmup period below)
+        row_number() over (
+            partition by ticker order by price_date
+        ) as rn,
+
+        -- Tactical (50d) horizon: 10-day SMA over 50-day SMA
         avg(relative_price) over (
             partition by ticker order by price_date
             rows between 49 preceding and current row
@@ -57,7 +62,7 @@ rrg_features as (
             rows between 9 preceding and current row
         ) as rp_sma_10,
 
-        -- Strategic (260d) horizon
+        -- Strategic (260d) horizon: 50-day SMA over 260-day SMA
         avg(relative_price) over (
             partition by ticker order by price_date
             rows between 259 preceding and current row
@@ -65,7 +70,7 @@ rrg_features as (
         avg(relative_price) over (
             partition by ticker order by price_date
             rows between 49 preceding and current row
-        ) as rp_sma_50_slow  -- momentum denominator for 260d
+        ) as rp_sma_50_strategic
 
     from relative
 ),
@@ -76,14 +81,15 @@ rs_calculated as (
     select
         ticker,
         price_date,
+        rn,
 
-        -- Tactical 50d
-        case when rp_sma_50  > 0 then round(relative_price / rp_sma_50  * 100, 4) end as rs_ratio_tactical,
-        case when rp_sma_50  > 0 then round(rp_sma_10     / rp_sma_50   * 100, 4) end as rs_momentum_tactical,
+        -- Tactical 50d (50-day baseline, 10-day momentum) — only valid after 50-row warmup
+        case when rp_sma_50  > 0 and rn >= 50  then round(relative_price / rp_sma_50  * 100, 4) end as rs_ratio_tactical,
+        case when rp_sma_50  > 0 and rn >= 50  then round(rp_sma_10     / rp_sma_50   * 100, 4) end as rs_momentum_tactical,
 
-        -- Strategic 260d
-        case when rp_sma_260 > 0 then round(relative_price / rp_sma_260 * 100, 4) end as rs_ratio_strategic,
-        case when rp_sma_260 > 0 then round(rp_sma_50_slow / rp_sma_260 * 100, 4) end as rs_momentum_strategic
+        -- Strategic 260d (260-day baseline, 50-day momentum) — only valid after 260-row warmup
+        case when rp_sma_260 > 0 and rn >= 260 then round(relative_price / rp_sma_260 * 100, 4) end as rs_ratio_strategic,
+        case when rp_sma_260 > 0 and rn >= 260 then round(rp_sma_50_strategic / rp_sma_260 * 100, 4) end as rs_momentum_strategic
 
     from rrg_features
 ),

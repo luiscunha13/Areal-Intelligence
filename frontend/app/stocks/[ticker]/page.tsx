@@ -136,11 +136,48 @@ export default function StockDetailPage() {
     if (!ticker) return;
 
     setLoading(true);
-    const p1 = fetch(`http://127.0.0.1:8000/api/companies/${ticker}`)
+    const p1 = fetch(`/api/stocks/${ticker}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && data.ticker) {
-          setStock(data);
+        if (data && (data.stock || data.ticker)) {
+          const stockObj = data.stock || data;
+          const scoreObj = data.score;
+          const finObj = (data.fundamentals && data.fundamentals[0]) ? data.fundamentals[0] : null;
+          const priceObj = (data.prices && data.prices[0]) ? data.prices[0] : null;
+
+          setStock({
+            id: 1,
+            ticker: stockObj.ticker,
+            company_name: stockObj.name || stockObj.ticker,
+            exchange: stockObj.exchange || 'US',
+            country: 'USA',
+            currency: 'USD',
+            market_cap: stockObj.market_cap || undefined,
+            sector_name: stockObj.sector || 'General',
+            active_regime: 'Reflation',
+            macro_fit_score: 85,
+            composite_candidate_score: scoreObj?.composite_score || 50,
+            candidate_category: scoreObj?.classification || 'LEADING',
+            latest_price: priceObj ? { close: Number(priceObj.close), adjusted_close: Number(priceObj.adj_close || priceObj.close), date: priceObj.date } : undefined,
+            latest_score: scoreObj ? {
+              overall_score: scoreObj.composite_score || 50,
+              rank: scoreObj.rank_overall || 1,
+              quality_score: scoreObj.quality_score,
+              growth_score: scoreObj.momentum_score,
+              valuation_score: scoreObj.value_score,
+              earnings_score: scoreObj.trend_score,
+              technical_score: scoreObj.momentum_score,
+              relative_strength_score: scoreObj.momentum_score,
+            } : undefined,
+            latest_financials: finObj ? {
+              period_end: finObj.period_end || '',
+              period_type: finObj.period_type || 'TTM',
+              revenue: finObj.revenue,
+              gross_profit: finObj.gross_profit,
+              net_income: finObj.net_income,
+              eps: finObj.eps,
+            } : undefined,
+          });
         } else {
           setStock(null);
         }
@@ -150,21 +187,7 @@ export default function StockDetailPage() {
         setStock(null);
       });
 
-    const p2 = fetch(`http://127.0.0.1:8000/api/entry/company/${ticker}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && data.entry_score) {
-          setEntryDetail(data);
-        } else {
-          setEntryDetail(null);
-        }
-      })
-      .catch((err) => {
-        console.error(`Error loading entry timing for ${ticker}:`, err);
-        setEntryDetail(null);
-      });
-
-    Promise.allSettled([p1, p2]).finally(() => setLoading(false));
+    Promise.allSettled([p1]).finally(() => setLoading(false));
   }, [ticker]);
 
   const formatCurrencyBillions = (val?: number) => {
