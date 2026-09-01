@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '../../components/Navbar';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ function ScoreBar({ score }: { score: number }) {
 
 // ── Main Page ────────────────────────────────────────────────────
 export default function EtfsPage() {
+  const router = useRouter();
   const [scores, setScores] = useState<EtfScore[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -222,7 +224,9 @@ export default function EtfsPage() {
                 ) : sorted.map((etf, i) => {
                   const cls = classifyScore(etf.composite_score ?? 0);
                   return (
-                    <tr key={etf.ticker} className="border-b border-[var(--border-color)] hover:bg-[var(--bg-card)] transition-colors">
+                    <tr key={etf.ticker}
+                      onClick={() => router.push(`/etfs/${etf.ticker}`)}
+                      className="border-b border-[var(--border-color)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer">
                       <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{etf.rank_overall ?? i + 1}</td>
                       <td className="px-3 py-2">
                         <span className="font-mono font-semibold text-[var(--text-main)]">{etf.ticker}</span>

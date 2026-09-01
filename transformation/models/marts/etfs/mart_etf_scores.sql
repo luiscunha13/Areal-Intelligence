@@ -32,34 +32,52 @@ with returns as (
     where price_date >= current_date - interval '{{ var("lookback_years") }} years'
 ),
 
--- Compute percentile ranks cross-sectionally per date (within each date, rank all ETFs)
-cross_sectional as (
+risk as (
     select
         ticker,
         price_date,
-        etf_category,
-        etf_sub_category,
-        ret_1m,
-        ret_3m,
-        ret_6m,
-        ret_12m,
-        sharpe_approx_1y,
-        volatility_ann_pct,
-        pct_52w_range,
-        high_52w,
-        low_52w,
+        max_drawdown_1y,
+        beta_vs_spy,
+        corr_vs_spy,
+        sortino_ratio
+    from {{ ref('int_etf_risk_metrics') }}
+    where price_date >= current_date - interval '{{ var("lookback_years") }} years'
+),
+
+-- Compute percentile ranks cross-sectionally per date (within each date, rank all ETFs)
+cross_sectional as (
+    select
+        r.ticker,
+        r.price_date,
+        r.etf_category,
+        r.etf_sub_category,
+        r.ret_1m,
+        r.ret_3m,
+        r.ret_6m,
+        r.ret_12m,
+        r.sharpe_approx_1y,
+        r.volatility_ann_pct,
+        r.pct_52w_range,
+        r.high_52w,
+        r.low_52w,
+        -- Risk metrics from int_etf_risk_metrics
+        rk.max_drawdown_1y,
+        rk.beta_vs_spy,
+        rk.corr_vs_spy,
+        rk.sortino_ratio,
 
         -- Percentile ranks (0-100) per date — used for normalization
-        percent_rank() over (partition by price_date order by ret_1m  nulls last) * 100 as pct_rank_1m,
-        percent_rank() over (partition by price_date order by ret_3m  nulls last) * 100 as pct_rank_3m,
-        percent_rank() over (partition by price_date order by ret_6m  nulls last) * 100 as pct_rank_6m,
-        percent_rank() over (partition by price_date order by ret_12m nulls last) * 100 as pct_rank_12m,
-        percent_rank() over (partition by price_date order by sharpe_approx_1y nulls last) * 100 as pct_rank_sharpe,
+        percent_rank() over (partition by r.price_date order by r.ret_1m  nulls last) * 100 as pct_rank_1m,
+        percent_rank() over (partition by r.price_date order by r.ret_3m  nulls last) * 100 as pct_rank_3m,
+        percent_rank() over (partition by r.price_date order by r.ret_6m  nulls last) * 100 as pct_rank_6m,
+        percent_rank() over (partition by r.price_date order by r.ret_12m nulls last) * 100 as pct_rank_12m,
+        percent_rank() over (partition by r.price_date order by r.sharpe_approx_1y nulls last) * 100 as pct_rank_sharpe,
         -- Volatility: LOWER is better → invert
-        percent_rank() over (partition by price_date order by volatility_ann_pct desc nulls last) * 100 as pct_rank_vol
+        percent_rank() over (partition by r.price_date order by r.volatility_ann_pct desc nulls last) * 100 as pct_rank_vol
 
-    from returns
-    where ret_1m is not null  -- need at least 1m of data
+    from returns r
+    left join risk rk on rk.ticker = r.ticker and rk.price_date = r.price_date
+    where r.ret_1m is not null  -- need at least 1m of data
 ),
 
 scored as (
@@ -77,6 +95,11 @@ scored as (
         pct_52w_range,
         high_52w,
         low_52w,
+        -- Risk metrics
+        max_drawdown_1y,
+        beta_vs_spy,
+        corr_vs_spy,
+        sortino_ratio,
 
         -- Composite score: weighted percentile ranks with fallback coalescing
         -- Weights: 1m=10%, 3m=20%, 6m=30%, 12m=25%, sharpe=10%, vol=5%
@@ -124,6 +147,11 @@ ranked as (
         pct_52w_range,
         high_52w,
         low_52w,
+        -- Risk metrics
+        max_drawdown_1y,
+        beta_vs_spy,
+        corr_vs_spy,
+        sortino_ratio,
         composite_score,
         classification,
 

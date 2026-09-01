@@ -110,25 +110,31 @@ def sync_marts_to_production(**context):
         conn.execute(text("""
             INSERT INTO etf_scores
                 (ticker, date, momentum_1m, momentum_3m, momentum_6m, momentum_12m,
-                 sharpe_1y, volatility_1y, composite_score, rank_overall, rank_category,
+                 sharpe_1y, volatility_1y, max_drawdown_1y, beta_vs_spy, corr_vs_spy,
+                 sortino_ratio, composite_score, rank_overall, rank_category,
                  scoring_version, computed_at)
             SELECT
                 ticker, price_date, ret_1m, ret_3m, ret_6m, ret_12m,
-                sharpe_approx_1y, volatility_ann_pct, composite_score,
-                rank_overall, rank_category, scoring_version, computed_at
+                sharpe_approx_1y, volatility_ann_pct, max_drawdown_1y,
+                beta_vs_spy, corr_vs_spy, sortino_ratio,
+                composite_score, rank_overall, rank_category, scoring_version, computed_at
             FROM public_marts.mart_etf_scores
             ON CONFLICT (ticker, date) DO UPDATE SET
-                momentum_1m = EXCLUDED.momentum_1m,
-                momentum_3m = EXCLUDED.momentum_3m,
-                momentum_6m = EXCLUDED.momentum_6m,
-                momentum_12m = EXCLUDED.momentum_12m,
-                sharpe_1y = EXCLUDED.sharpe_1y,
-                volatility_1y = EXCLUDED.volatility_1y,
+                momentum_1m     = EXCLUDED.momentum_1m,
+                momentum_3m     = EXCLUDED.momentum_3m,
+                momentum_6m     = EXCLUDED.momentum_6m,
+                momentum_12m    = EXCLUDED.momentum_12m,
+                sharpe_1y       = EXCLUDED.sharpe_1y,
+                volatility_1y   = EXCLUDED.volatility_1y,
+                max_drawdown_1y = EXCLUDED.max_drawdown_1y,
+                beta_vs_spy     = EXCLUDED.beta_vs_spy,
+                corr_vs_spy     = EXCLUDED.corr_vs_spy,
+                sortino_ratio   = EXCLUDED.sortino_ratio,
                 composite_score = EXCLUDED.composite_score,
-                rank_overall = EXCLUDED.rank_overall,
-                rank_category = EXCLUDED.rank_category,
+                rank_overall    = EXCLUDED.rank_overall,
+                rank_category   = EXCLUDED.rank_category,
                 scoring_version = EXCLUDED.scoring_version,
-                computed_at = EXCLUDED.computed_at
+                computed_at     = EXCLUDED.computed_at
         """))
         logger.info("✅ etf_scores synced")
 

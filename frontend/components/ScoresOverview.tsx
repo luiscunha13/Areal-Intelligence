@@ -110,17 +110,16 @@ export const ScoresOverview: React.FC<ScoresOverviewProps> = ({ currentRegime, h
     <div className="space-y-8 pt-2 w-full">
 
       {/* 1. Hero / Current Macro Regime Section */}
-      <div className={`rounded-xl border ${qColors.border} bg-[var(--bg-main)] p-5 space-y-4`}>
+      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className={`h-2.5 w-2.5 rounded-full animate-pulse ${qColors.dot}`} />
               <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Current Macro Regime</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
               {currentRegime.regime}
             </h2>
-            <div className={`text-xs font-mono mt-1 ${qColors.text}`}>
+            <div className={`text-xs font-mono mt-1 text-[var(--text-main)]`}>
               {currentRegime.quadrant} Quadrant · {currentRegime.severity}
             </div>
           </div>

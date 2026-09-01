@@ -178,7 +178,7 @@ def get_sector_detail(
     horizon: str = Query("tactical_50d"),
     db: Session = Depends(get_db)
 ):
-    """Return sector detail and current scores for the requested horizon."""
+    """Return sector detail, scores, and top constituent stocks for the requested horizon."""
     sector = db.execute(text(
         "SELECT * FROM sectors WHERE etf_ticker = :ticker OR name ILIKE :ticker"
     ), {"ticker": ticker.upper()}).mappings().first()
@@ -195,10 +195,40 @@ def get_sector_detail(
     active_quad = db.execute(text("SELECT quadrant FROM market_regimes ORDER BY date DESC LIMIT 1")).scalar() or "reflation"
     enriched_score = _enrich_sector_score(score, active_quadrant=active_quad) if score else None
 
+    # Fetch constituent companies belonging to this sector or ETF
+    sec_name = sector["name"] if sector else ticker
+    etf_tick = sector["etf_ticker"] if sector else ticker.upper()
+
+    companies_rows = db.execute(text("""
+        SELECT s.id, s.ticker, s.name as company_name, COALESCE(s.exchange, 'US') as exchange,
+               s.industry, s.market_cap_tier
+        FROM stocks s
+        WHERE s.sector ILIKE :sec_name OR s.sector = :sec_name
+        ORDER BY s.ticker
+        LIMIT 50
+    """), {"sec_name": sec_name}).mappings().all()
+
+    companies = [dict(c) for c in companies_rows]
+
+    if not companies and etf_tick:
+        companies_rows = db.execute(text("""
+            SELECT 1 as id, symbol as ticker, COALESCE(name, symbol) as company_name, 'US' as exchange,
+                   '' as industry, '' as market_cap_tier
+            FROM etf_holdings
+            WHERE etf_ticker = :etf_tick
+            ORDER BY rank
+            LIMIT 50
+        """), {"etf_tick": etf_tick}).mappings().all()
+        companies = [dict(c) for c in companies_rows]
+
+    sec_dict = dict(sector) if sector else {"symbol": ticker.upper(), "name": ticker}
+    sec_dict["total_companies"] = len(companies)
+
     return {
-        "sector": dict(sector) if sector else {"symbol": ticker.upper(), "name": ticker},
+        "sector": sec_dict,
         "score": enriched_score,
-        "latest_score": enriched_score
+        "latest_score": enriched_score,
+        "companies": companies,
     }
 
 
