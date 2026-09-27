@@ -38,7 +38,6 @@ export const Navbar: React.FC<NavbarProps> = ({ asofDate }) => {
   const navItems = [
     { name: 'Macro Engine', href: '/macro' },
     { name: 'Sectors', href: '/sectors' },
-    { name: 'ETF Analysis', href: '/etfs' },
     { name: 'Stock Screener', href: '/stocks' },
     { name: 'Candidates', href: '/candidates' },
     { name: 'Entry Timing', href: '/entry' },

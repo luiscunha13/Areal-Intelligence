@@ -33,29 +33,14 @@ export default function EntryPage() {
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/stocks/screener?limit=100');
+      const res = await fetch('http://127.0.0.1:8000/api/entry/ranking');
       if (res.ok) {
-        const raw = await res.json();
-        const list = Array.isArray(raw) ? raw : (raw.entry_opportunities || []);
-        setEntries(list.map((s: any, idx: number) => ({
-          company_id: idx + 1,
-          ticker: s.ticker,
-          company_name: s.name || s.ticker,
-          stock_score: Math.round(s.composite_score || 50),
-          entry_score: Math.round(s.momentum_score || s.composite_score || 50),
-          status: 'OPTIMAL',
-          confidence: 'HIGH',
-          current_price: s.latest_price || s.close || 100,
-          entry_zone: {
-            low: (s.latest_price || 100) * 0.97,
-            high: (s.latest_price || 100) * 1.01,
-          },
-          invalidation_price: (s.latest_price || 100) * 0.93,
-          target_price: (s.latest_price || 100) * 1.15,
-          risk_reward_ratio: 2.5,
-          setups: ['Momentum Breakout', 'RRG Leading Quadrant'],
-          event_risk: 'LOW',
-        })));
+        const data = await res.json();
+        if (data && data.entry_opportunities) {
+          setEntries(data.entry_opportunities);
+        } else {
+          setEntries([]);
+        }
       } else {
         setEntries([]);
       }

@@ -88,22 +88,15 @@ export default function StocksPage() {
   const fetchMacroAndSectors = async () => {
     try {
       const [rRegime, rSectors] = await Promise.all([
-        fetch('/api/macro/regime/current').then(res => res.ok ? res.json() : null),
-        fetch('/api/sectors/scores').then(res => res.ok ? res.json() : null)
+        fetch('http://127.0.0.1:8000/api/regime/current').then(res => res.ok ? res.json() : null),
+        fetch('http://127.0.0.1:8000/api/sectors/ranking').then(res => res.ok ? res.json() : null)
       ]);
 
-      if (rRegime && (rRegime.quadrant || rRegime.regime)) {
-        setActiveRegime(rRegime.quadrant ? `${rRegime.quadrant.toUpperCase()} (${rRegime.policy_stance || 'accommodative'})` : rRegime.regime);
+      if (rRegime && rRegime.regime) {
+        setActiveRegime(rRegime.regime);
       }
-      const sectorList = Array.isArray(rSectors) ? rSectors : (rSectors?.rankings || []);
-      if (sectorList.length > 0) {
-        setSectorRankings(sectorList.map((s: any) => ({
-          symbol: s.symbol || s.ticker,
-          name: s.name || s.sector_name || s.ticker,
-          rank: s.rank || 1,
-          overall_score: Math.round(s.composite_score || s.overall_score || 50),
-          classification: s.quadrant || s.classification || 'LEADING'
-        })));
+      if (rSectors && rSectors.rankings) {
+        setSectorRankings(rSectors.rankings);
       }
     } catch (err) {
       console.error('Error fetching macro/sector headers:', err);
@@ -114,23 +107,17 @@ export default function StocksPage() {
     setLoading(true);
     try {
       const url = queryStr.trim()
-        ? `/api/stocks/screener?search=${encodeURIComponent(queryStr.trim())}&limit=2000`
-        : `/api/stocks/screener?limit=2000`;
+        ? `http://127.0.0.1:8000/api/companies/rankings?search=${encodeURIComponent(queryStr.trim())}&limit=2000`
+        : `http://127.0.0.1:8000/api/companies/rankings?limit=2000`;
 
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.rankings || []);
-        setRankings(list.map((s: any, idx: number) => ({
-          company_id: idx + 1,
-          ticker: s.ticker,
-          company_name: s.name || s.ticker,
-          sector_id: 1,
-          sector_name: s.sector || 'General',
-          close_price: s.latest_price || s.close,
-          rank: s.rank_overall || s.rank || (idx + 1),
-          overall_score: Math.round(s.composite_score || s.overall_score || 50),
-        })));
+        if (data && data.rankings) {
+          setRankings(data.rankings);
+        } else {
+          setRankings([]);
+        }
       } else {
         setRankings([]);
       }
