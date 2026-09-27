@@ -101,6 +101,6 @@ dbt test --project-dir transformation
 
 ---
 
-## 📄 License
+## License
 
 MIT License
