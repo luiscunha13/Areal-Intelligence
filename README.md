@@ -1,153 +1,106 @@
 # Areal Intelligence
 
-Automated financial intelligence platform — macroeconomic indicators, ETFs, sectors, and stocks.
-
-## Architecture
-
-```
-catalog/          ← YAML-driven asset registry (add data = edit YAML)
-ingestion/        ← Data loaders (FRED, yfinance, EDGAR)
-transformation/   ← dbt models (staging → intermediate → marts)
-scoring/          ← Pure Python analytics engines
-airflow/dags/     ← Automated pipeline DAGs
-api/              ← FastAPI serving layer
-frontend/         ← Next.js dashboard
-migrations/       ← Alembic DB schema versions
-```
-
-**Stack**: PostgreSQL 16 + TimescaleDB · Apache Airflow · dbt · FastAPI · Next.js
-
-## Quick Start
-
-### 1. Prerequisites
-```bash
-docker compose version   # >= 2.20
-python --version         # >= 3.11
-```
-
-### 2. Configure environment
-```bash
-cp .env.example .env
-# Edit .env and add your FRED_API_KEY (free at https://fred.stlouisfed.org/docs/api/api_key.html)
-```
-
-### 3. Start the stack
-```bash
-docker compose up -d
-```
-
-Services available:
-- **Airflow UI**: http://localhost:8080 (admin / admin)
-- **API docs**: http://localhost:8000/docs
-- **Frontend**: http://localhost:3000
-
-### 4. Run initial setup (first time only)
-```bash
-# Apply DB schema
-docker compose exec api alembic upgrade head
-
-# Sync catalogs to DB
-docker compose exec api python /app/../scripts/catalog_sync.py
-
-# Backfill 5 years of macro data
-docker compose exec airflow-scheduler airflow dags trigger macro_indicators --conf '{"start_date": "2020-01-01"}'
-
-# Backfill 5 years of ETF prices
-docker compose exec airflow-scheduler airflow dags trigger market_prices --conf '{"start_date": "2020-01-01"}'
-```
-
-### 5. Adding a new economic indicator
-
-Edit `catalog/macro_series.yaml`, add:
-```yaml
-- series_id: YOUR_FRED_ID
-  name: Indicator Name
-  category: growth  # growth | inflation | rates | liquidity | credit | risk | benchmark
-  source: fred
-  frequency: monthly
-  unit: index
-```
-
-Then commit and push — the `catalog_sync` task in the Airflow DAG runs daily and picks it up automatically. Zero code changes required.
-
-### 6. Adding a new ETF
-
-Edit `catalog/etfs.yaml`, add:
-```yaml
-- ticker: YOURETF
-  name: Fund Full Name
-  category: thematic
-  sub_category: your_theme
-  benchmark: Index Name
-  expense_ratio: 0.0065
-```
-
-## Data Pipeline
-
-```
-FRED API ──────────────► macro_observations (hypertable)
-                                   │
-yfinance ──────────────► prices (hypertable)
-                                   │
-SEC EDGAR ─────────────► financial_metrics
-                                   │
-                         dbt transforms
-                                   │
-                    ┌──────────────┼──────────────┐
-               macro_features  sector_scores  etf_scores  stock_scores
-                                   │
-                              FastAPI → Next.js
-```
-
-## Airflow DAGs
-
-| DAG | Schedule | Purpose |
-|---|---|---|
-| `macro_indicators` | Daily 07:00 UTC | FRED macro ingestion + derived series |
-| `market_prices` | Daily 22:00 UTC | EOD prices for all catalog ETFs |
-| `fundamentals` | Weekly Monday | Earnings + financials (EDGAR + yfinance) |
-| `scoring_engine` | Daily 23:00 UTC | Recalculate all scores + regimes |
-| `data_quality` | Weekly Monday | Freshness + completeness report |
-
-## Data Lineage
-
-Every row in production tables carries:
-- `source` — where the data came from (`fred_api`, `yfinance`, `derived`)
-- `fetched_at` — timestamp of ingestion
-- `run_id` — links back to the `pipeline_runs` audit table
-- `scoring_version` — version of the scoring model that computed the row
-
-## Development
-
-```bash
-# Run tests
-pytest tests/
-
-# Lint
-ruff check .
-
-# Apply new migration
-alembic revision --autogenerate -m "description"
-alembic upgrade head
-
-# Sync catalog manually
-python scripts/catalog_sync.py --dry-run
-python scripts/catalog_sync.py
-```
-
-## ETF Universe
-
-~95 ETFs across 9 categories, all priced via yfinance (free):
-- **Sector** (11) — GICS sector SPDR funds
-- **Factor/Style** (15) — momentum, quality, value, growth, small-cap
-- **Fixed Income** (13) — treasury, corporate, TIPS, EM bonds
-- **International** (13) — developed, emerging, regional
-- **Commodity** (11) — gold, oil, copper, agriculture, broad
-- **Real Estate** (5) — broad REIT, mortgage REIT, international
-- **Thematic** (14) — AI, robotics, clean energy, cybersecurity, EV
-- **Volatility** (5) — long/short vol, managed futures, tail risk
-- **Multi-Asset** (5) — balanced, risk parity, leveraged core
+Automated quantitative macroeconomic intelligence platform & Point-in-Time equity/sector regime identification engine.
 
 ---
 
-> Designed to be portable to Snowflake/BigQuery and deployable to AWS via Terraform if data volume outgrows PostgreSQL.
+## Architecture Overview
+
+```text
+Areal-Intelligence/
+├── backend/            ← FastAPI application, SQLAlchemy models, schemas, and scoring engines
+│   ├── app/
+│   │   ├── api/routes/ ← REST endpoints (macro, sectors, companies, candidates, entry timing)
+│   │   ├── models/     ← DB models (macro series, sector returns, company snapshots, stock scores)
+│   │   └── services/   ← Analytical engines (macro regime, stock scoring, relative strength, entry timing)
+│   └── tests/          ← Pytest test suite (31 unit & API integration tests)
+├── scripts/            ← Data pipeline, ingestion, backtesting, and DB migration utilities
+│   ├── cron_nightly_pipeline.py    ← Nightly automated ELT orchestrator
+│   ├── run_cross_sectional_scoring.py ← Point-in-Time Z-Score normalization engine
+│   ├── calculate_sector_features.py  ← Sector RRG (RS-Ratio / RS-Momentum) calculator
+│   ├── refresh_materialized_snapshots.py ← Materialized company snapshot view refresher
+│   └── migrate_v2_schema.py        ← DB schema migrations
+├── transformation/     ← dbt transformation project (staging → intermediate → marts)
+├── airflow/            ← Apache Airflow DAGs for automated workflow scheduling
+├── docs/               ← Architecture specifications and methodology guides
+├── frontend/           ← Next.js 14 web dashboard (Tailwind CSS, React 18, Recharts)
+└── docker-compose.yml  ← Docker environment for PostgreSQL & backend execution
+```
+
+**Tech Stack**: PostgreSQL 15 · Apache Airflow 2.9 · dbt-postgres · FastAPI · Next.js 14 · Pandas · NumPy · Pytest · Docker
+
+---
+
+## Key Features & Analytics Engines
+
+- **Automated Data Harvesting:** Extracts 18 core FRED macro series, daily stock/sector ETF time-series (yfinance), and corporate fundamentals (SEC EDGAR REST APIs).
+- **Macro Regime Classification:** Rule-based 5-regime market classification (`Strong Risk-On`, `Moderate Risk-On`, `Neutral / Transition`, `Slowdown / Risk-Off`, `Recession / Strong Risk-Off`) with dynamic driver decomposition.
+- **Cross-Sectional Z-Score Ranking Engine:** Methodology v2.0 Point-in-Time Z-Score normalization across Quality, Growth, Valuation, Earnings, Technicals, and Relative Strength.
+- **Sector Rotation & RRG Features:** Relative Rotation Graph metrics (RS-Ratio and RS-Momentum) across GICS sectors and thematic ETFs.
+- **Entry Timing & Opportunity Scanner:** Short-term momentum, moving average distance (20D/50D/200D SMA/EMA), and RSI signal triggers.
+- **Materialized Screener Snapshots:** High-performance pre-computed PostgreSQL snapshot views serving downstream REST APIs.
+- **Point-in-Time (PIT) Backtesting:** Historical simulator enforcing `vintage_date <= simulation_date` to prevent look-ahead bias.
+
+---
+
+## Quickstart Guide
+
+### 1. Configure Environment Variables
+```bash
+cp .env.example .env
+```
+Edit `.env` to supply your FRED API Key:
+```env
+FRED_API_KEY=your_fred_api_key_here
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/macrodb
+```
+
+### 2. Start PostgreSQL via Docker
+```bash
+docker compose up -d db
+```
+
+### 3. Run Schema Migrations & Data Pipeline
+```bash
+# Apply v2 schema migrations
+python scripts/migrate_v2_schema.py
+
+# Execute full ingestion & scoring pipeline
+python scripts/cron_nightly_pipeline.py
+```
+
+### 4. Run FastAPI Backend & Next.js Frontend
+
+```bash
+# FastAPI Backend REST Server
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/macrodb uvicorn backend.app.main:app --reload --port 8000
+
+# Next.js Web Dashboard
+cd frontend
+npm install
+npm run dev
+```
+
+* **Web Dashboard:** [http://localhost:3000](http://localhost:3000)
+* **API Swagger Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## 🧪 Testing & Data Quality Verification
+
+Execute the complete backend test suite using `pytest`:
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/macrodb python3 -m pytest backend/tests
+```
+
+Run dbt data quality tests (if running inside Airflow/dbt environment):
+```bash
+dbt test --project-dir transformation
+```
+
+---
+
+## 📄 License
+
+MIT License
